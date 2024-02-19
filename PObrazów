@@ -1,0 +1,61 @@
+% Wczytanie obrazu
+img = imread('obrazek.png');
+
+% Konwersja obrazu na skalę szarości
+gray = rgb2gray(img);
+
+% Zastosowanie operatora Laplace'a
+laplacian = del2(double(gray));
+
+% Zastosowanie filtrów dolnoprzepustowych Gaussa, Butterwortha i Idealnego
+[rows, cols] = size(gray);
+crow = floor(rows / 2);
+ccol = floor(cols / 2);
+
+% Filtr Gaussa
+gaussian_filter = zeros(rows, cols);
+gaussian_filter(crow - 10:crow + 10, ccol - 10:ccol + 10) = 1;
+gaussian_filter = imgaussfilt(gaussian_filter, 5);
+
+% Filtr Butterwortha
+butterworth_filter = zeros(rows, cols);
+butterworth_filter(crow - 10:crow + 10, ccol - 10:ccol + 10) = 1;
+butterworth_filter = fft2(butterworth_filter);
+butterworth_filter = 1 ./ (1 + (butterworth_filter / 10).^(2 * 10));
+
+% Idealny filtr dolnoprzepustowy
+ideal_filter = zeros(rows, cols);
+ideal_filter(crow - 10:crow + 10, ccol - 10:ccol + 10) = 1;
+ideal_filter = fft2(ideal_filter);
+ideal_filter = double(abs(ideal_filter) <= 10);
+
+% Przeprowadzenie filtracji
+f = fft2(double(gray));
+fshift = fftshift(f);
+
+% Filtracja Gaussa
+gaussian_spectrum = fshift .* gaussian_filter;
+gaussian_spectrum_shift = ifftshift(gaussian_spectrum);
+gaussian_image = ifft2(gaussian_spectrum_shift);
+gaussian_image = mat2gray(abs(gaussian_image));
+
+% Filtracja Butterwortha
+butterworth_spectrum = fshift .* butterworth_filter;
+butterworth_spectrum_shift = ifftshift(butterworth_spectrum);
+butterworth_image = ifft2(butterworth_spectrum_shift);
+butterworth_image = mat2gray(abs(butterworth_image));
+
+% Filtracja Idealna
+ideal_spectrum = fshift .* ideal_filter;
+ideal_spectrum_shift = ifftshift(ideal_spectrum);
+ideal_image = ifft2(ideal_spectrum_shift);
+ideal_image = mat2gray(abs(ideal_image));
+
+% Wyświetlenie obrazu przed i po zastosowaniu operatora Laplace'a oraz filtrów dolnoprzepustowych
+figure;
+subplot(2, 3, 1), imshow(img), title('Obraz przed');
+subplot(2, 3, 2), imshow(laplacian, []), title('Obraz po Laplace');
+
+subplot(2, 3, 3), imshow(gaussian_image, 'InitialMagnification', 'fit'), title('Obraz po filtracji Gaussa');
+subplot(2, 3, 4), imshow(butterworth_image, 'InitialMagnification', 'fit'), title('Obraz po filtracji Butterwortha');
+subplot(2, 3, 5), imshow(ideal_image, 'InitialMagnification', 'fit'), title('Obraz po filtracji Idealnej');
